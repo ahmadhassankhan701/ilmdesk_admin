@@ -5,12 +5,12 @@ import { getStorage } from 'firebase/storage'
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: 'AIzaSyCL9qVj0XKo8y2QQRoKwvXcJhLVQUUkQJw',
-  authDomain: 'tooltracker-63d64.firebaseapp.com',
-  projectId: 'tooltracker-63d64',
-  storageBucket: 'tooltracker-63d64.firebasestorage.app',
-  messagingSenderId: '135028995684',
-  appId: '1:135028995684:web:289653b67e7dd7bae69171',
+  apiKey: process.env.APIKEY,
+  authDomain: process.env.AUTHDOMAIN,
+  projectId: process.env.PROJECTID,
+  storageBucket: process.env.STORAGEBUCKET,
+  messagingSenderId: process.env.MESSAGINGSENDERID,
+  appId: process.env.APPID,
 }
 
 export const app = initializeApp(firebaseConfig, 'qasim-lms')
