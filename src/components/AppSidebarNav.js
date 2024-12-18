@@ -1,13 +1,15 @@
 import React from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import PropTypes from 'prop-types'
 
 import SimpleBar from 'simplebar-react'
 import 'simplebar-react/dist/simplebar.min.css'
 
 import { CBadge, CNavLink, CSidebarNav } from '@coreui/react'
-
+import { useAuth } from '../context/AuthContext'
+import CIcon from '@coreui/icons-react'
 export const AppSidebarNav = ({ items }) => {
+  const { state } = useAuth()
   const navLink = (name, icon, badge, indent = false) => {
     return (
       <>
@@ -61,10 +63,39 @@ export const AppSidebarNav = ({ items }) => {
   }
 
   return (
-    <CSidebarNav as={SimpleBar}>
-      {items &&
-        items.map((item, index) => (item.items ? navGroup(item, index) : navItem(item, index)))}
-    </CSidebarNav>
+    <div>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginTop: '20px',
+        }}
+      >
+        <div className="card mb-3" style={{ width: '95%', backgroundColor: 'rgb(41.5, 48, 61)' }}>
+          <div className="row g-0">
+            <div className="col-md-9">
+              <div className="card-body">
+                <h6 className="card-title">{state && state.user ? state.user.name : 'John Doe'}</h6>
+                <p className="card-text">{state && state.user ? state.user.role : 'User'}</p>
+              </div>
+            </div>
+            <div
+              className="col-md-3"
+              style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+            >
+              <div className="avatar">
+                <img className="avatar-img" src="/src/assets/images/avatars/8.jpg" alt="favicon" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <CSidebarNav as={SimpleBar}>
+        {items &&
+          items.map((item, index) => (item.items ? navGroup(item, index) : navItem(item, index)))}
+      </CSidebarNav>
+    </div>
   )
 }
 
