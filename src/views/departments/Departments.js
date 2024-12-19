@@ -46,6 +46,11 @@ const Departments = () => {
       const docRef = collection(db, 'Departments')
       const q = query(docRef, orderBy('createdAt', 'desc'), limit(10))
       const docSnap = await getDocs(q)
+      if (docSnap.size == 0) {
+        setLoading(false)
+        toast.info('No department found')
+        return
+      }
       // Get the last visible document
       const lastItem = docSnap.docs[docSnap.docs.length - 1]
       setLastVisible(lastItem)

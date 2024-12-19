@@ -11,10 +11,17 @@ import {
   CFormTextarea,
   CRow,
 } from '@coreui/react'
-import { addDoc, collection, doc, getDocs } from 'firebase/firestore'
+import { addDoc, collection, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore'
 import { db } from '../../../firebase'
 import { toast } from 'react-toastify'
-const AddProducts = () => {
+import { useParams } from 'react-router-dom'
+import moment from 'moment'
+const EditProduct = () => {
+  const { id } = useParams()
+  const [displayCheckedTime, setDisplayCheckedTime] = useState({
+    checkedIn: '',
+    checkedOut: '',
+  })
   const [checkedIn, setCheckedIn] = useState('')
   const [checkedOut, setCheckedOut] = useState('')
   const [product, setProduct] = useState({
@@ -29,9 +36,41 @@ const AddProducts = () => {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
   useEffect(() => {
+    fetchProduct()
     fetchDepts()
     fetchUsers()
-  }, [])
+  }, [id])
+  const fetchProduct = async () => {
+    try {
+      setLoading(true)
+      const docRef = doc(db, `Products/${id}`)
+      const docSnap = await getDoc(docRef)
+      if (docSnap.exists()) {
+        const docData = docSnap.data()
+        setProduct({
+          ...product,
+          id: docData.id,
+          title: docData.title,
+          desc: docData.desc,
+          barcode: docData.barcode,
+          assignedUser: docData.assignedUser,
+          //   assignedUser: findTitle(docData.assignedUser),
+          assignedDept: docData.assignedDept,
+          //   assignedDept: findTitle(docData.assignedDept),
+        })
+        setDisplayCheckedTime({
+          ...displayCheckedTime,
+          checkedIn: docData.checkedIn,
+          checkedOut: docData.checkedOut,
+        })
+      }
+      setLoading(false)
+    } catch (error) {
+      setLoading(false)
+      toast.error('Error fetching product')
+      console.log(error)
+    }
+  }
   const fetchUsers = async () => {
     try {
       setLoading(true)
@@ -83,28 +122,25 @@ const AddProducts = () => {
       !product.desc ||
       !product.barcode ||
       !product.assignedUser ||
-      !product.assignedDept ||
-      !checkedIn ||
-      !checkedOut
+      !product.assignedDept
     ) {
       toast.error('All fields are required')
       return
     }
     try {
       setLoading(true)
-      const docRef = collection(db, 'Products')
-      await addDoc(docRef, {
+      const docRef = doc(db, `Products/${id}`)
+      await updateDoc(docRef, {
         ...product,
-        checkedIn: new Date(checkedIn),
-        checkedOut: new Date(checkedOut),
-        createdAt: new Date(),
+        checkedIn: checkedIn == '' ? displayCheckedTime.checkedIn : new Date(checkedIn),
+        checkedOut: checkedOut == '' ? displayCheckedTime.checkedOut : new Date(checkedOut),
         updatedAt: new Date(),
       })
       setLoading(false)
-      toast.success('Product added successfully!')
+      toast.success('Product updated successfully!')
     } catch (error) {
       setLoading(false)
-      toast.error('Failed adding product')
+      toast.error('Failed updating product')
       console.log(error)
     }
   }
@@ -173,6 +209,7 @@ const AddProducts = () => {
               <div className="mb-3">
                 <CFormSelect
                   aria-label="Default select example"
+                  value={product.assignedUser}
                   onChange={(e) => setProduct({ ...product, assignedUser: e.target.value })}
                 >
                   <option>Select User to Assign</option>
@@ -187,6 +224,7 @@ const AddProducts = () => {
               <div className="mb-5">
                 <CFormSelect
                   aria-label="Default select example"
+                  value={product.assignedDept}
                   onChange={(e) => setProduct({ ...product, assignedDept: e.target.value })}
                 >
                   <option>Select Department to Assign</option>
@@ -199,7 +237,7 @@ const AddProducts = () => {
                 </CFormSelect>
               </div>
               <div
-                className="mb-5"
+                className="mb-2"
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -228,8 +266,26 @@ const AddProducts = () => {
                   />
                 </div>
               </div>
+              <div
+                className="mb-5"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 10,
+                }}
+              >
+                <p>
+                  Current Checked In:{' '}
+                  {moment(displayCheckedTime.checkedIn.seconds * 1000).format('DD MMM, YYYY ddd')}
+                </p>
+                <p>
+                  Current Checked Out:{' '}
+                  {moment(displayCheckedTime.checkedOut.seconds * 1000).format('DD MMM, YYYY ddd')}
+                </p>
+              </div>
               <CButton className="w-100" color="primary" onClick={handleSubmit}>
-                Submit
+                Update
               </CButton>
             </CForm>
           </CCardBody>
@@ -239,4 +295,4 @@ const AddProducts = () => {
   )
 }
 
-export default AddProducts
+export default EditProduct

@@ -183,7 +183,6 @@ const Dashboard = () => {
   return (
     <>
       <WidgetsDropdown className="mb-4" />
-      {JSON.stringify(state, null, 4)}
       <CCard className="mb-4">
         <CCardBody>
           <CRow>

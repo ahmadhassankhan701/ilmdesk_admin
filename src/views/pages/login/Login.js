@@ -26,9 +26,9 @@ const Login = () => {
   const navigate = useNavigate()
   const { setState } = useAuth()
   const [user, setUser] = useState({
-    role: 'user',
-    email: 'johndoe@gmail.com',
-    password: 'john1234',
+    role: '',
+    email: '',
+    password: '',
   })
   const [loading, setLoading] = useState(false)
   const handleSubmit = async () => {
@@ -47,7 +47,7 @@ const Login = () => {
       } else {
         signOut(auth)
         setLoading(false)
-        toast.error('User not found in db')
+        toast.error('User not found in db. Contact admin')
         return
       }
       handleState(userCredential.user, user.role)
@@ -163,8 +163,8 @@ const Login = () => {
                   <div>
                     <h2>Sign up</h2>
                     <p>
-                      Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                      tempor incididunt ut labore et dolore magna aliqua.
+                      Single and unified place to track and trace all the tools and products and
+                      their assignees
                     </p>
                     <Link to="/register">
                       <CButton color="primary" className="mt-3" active tabIndex={-1}>

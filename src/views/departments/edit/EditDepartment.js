@@ -73,7 +73,7 @@ const EditDepartment = () => {
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader>
-            <strong>Add New Department</strong>
+            <strong>Edit Department</strong>
           </CCardHeader>
           <CCardBody>
             <CForm>
