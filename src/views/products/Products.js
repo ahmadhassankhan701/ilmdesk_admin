@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import {
+  CAvatar,
   CButton,
   CCard,
   CCardBody,
   CCardHeader,
   CCol,
   CFormInput,
+  CImage,
   CInputGroup,
   CInputGroupText,
   CRow,
@@ -16,30 +18,57 @@ import {
   CTableHeaderCell,
   CTableRow,
 } from '@coreui/react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import CIcon from '@coreui/icons-react'
-import { cilPencil, cilSearch, cilTrash } from '@coreui/icons'
+import { cilCart, cilPencil, cilSearch, cilTrash, cilUser } from '@coreui/icons'
 import { toast } from 'react-toastify'
 import {
+  addDoc,
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   limit,
   orderBy,
   query,
   startAfter,
+  updateDoc,
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import moment from 'moment'
+import { useAuth } from '../../context/AuthContext'
 const Products = () => {
+  const { state } = useAuth()
+  const navigate = useNavigate()
   const [products, setProducts] = useState([])
+  const [userDetails, setUserDetails] = useState([])
   const [lastVisible, setLastVisible] = useState({})
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     fetchProducts()
-  }, [])
+  }, [state && state.user])
+  useEffect(() => {
+    if (state.user.role === 'user') {
+      fetchCurrentAssignedItems()
+    }
+  }, [state && state.user])
+  const fetchCurrentAssignedItems = async () => {
+    try {
+      setLoading(true)
+      const docRef = doc(db, `Users/${state.user.uid}`)
+      const docSnap = await getDoc(docRef)
+      if (docSnap.exists) {
+        setUserDetails({ key: docSnap.id, ...docSnap.data() })
+      }
+      setLoading(false)
+    } catch (error) {
+      setLoading(false)
+      toast.error('Failed to fetch user details')
+      console.log(error)
+    }
+  }
   const fetchProducts = async () => {
     try {
       setLoading(true)
@@ -143,9 +172,68 @@ const Products = () => {
       console.log(error)
     }
   }
-  const findTitle = (str) => {
-    const parts = str.split('-')
-    return parts[1]
+  const handleCheckIn = async (product) => {
+    try {
+      setLoading(true)
+      const docRef = collection(db, 'AssignedHistory')
+      const newDoc = await addDoc(docRef, {
+        productId: product.key,
+        productTitle: product.title,
+        productImage: product.image,
+        userId: userDetails.key,
+        userName: userDetails.name,
+        userImage: userDetails.image,
+        checkedInAt: new Date(),
+        checkedOutAt: '',
+      })
+      let currentlyAssigned = []
+      if (userDetails.currentAssigned && userDetails.currentAssigned.length > 0) {
+        currentlyAssigned = [...userDetails.currentAssigned]
+      }
+      currentlyAssigned.push({ productKey: product.key, currentAssignedKey: newDoc.id })
+      const userRef = doc(db, `Users/${userDetails.key}`)
+      await updateDoc(userRef, {
+        currentAssigned: currentlyAssigned,
+      })
+      setLoading(false)
+      toast.success('Check In Successful')
+      navigate('/history')
+    } catch (error) {
+      setLoading(false)
+      toast.error('Failed check in')
+      console.log(error)
+    }
+  }
+  const handleCheckOut = async (product) => {
+    try {
+      setLoading(true)
+      let currentlyAssignedKey = ''
+      let currentlyAssigned = []
+      if (userDetails.currentAssigned && userDetails.currentAssigned.length > 0) {
+        userDetails.currentAssigned.map((item) => {
+          if (item.productKey === product.key) {
+            currentlyAssignedKey = item.currentAssignedKey
+          } else {
+            currentlyAssigned.push(item)
+          }
+        })
+      }
+      const userRef = doc(db, `Users/${userDetails.key}`)
+      const docRef = doc(db, `AssignedHistory/${currentlyAssignedKey}`)
+      await updateDoc(userRef, {
+        currentAssigned: currentlyAssigned,
+      })
+      await updateDoc(docRef, {
+        checkedOutAt: new Date(),
+      })
+      setLoading(false)
+      toast.success('Check Out Successful')
+      navigate('/history')
+    } catch (error) {
+      setLoading(false)
+      toast.error('Failed check out')
+      console.log(error)
+    }
   }
   return (
     <CRow style={{ position: 'relative' }}>
@@ -172,13 +260,15 @@ const Products = () => {
             style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}
           >
             <strong>Products</strong>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Link to="/products/add">
-                <CButton color="primary" shape="pill" size="sm">
-                  Add new
-                </CButton>
-              </Link>
-            </div>
+            {state.user && state.user.role === 'admin' && (
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Link to="/products/add">
+                  <CButton color="primary" shape="pill" size="sm">
+                    Add new
+                  </CButton>
+                </Link>
+              </div>
+            )}
           </CCardHeader>
           <CCardBody>
             <div
@@ -206,22 +296,16 @@ const Products = () => {
               <CTableHead>
                 <CTableRow>
                   <CTableHeaderCell scope="col" className="w-20">
+                    Image
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" className="w-20">
                     ID
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" className="w-20">
                     Title
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" className="w-20">
-                    Assigned User
-                  </CTableHeaderCell>
-                  <CTableHeaderCell scope="col" className="w-20">
-                    Assigned Department
-                  </CTableHeaderCell>
-                  <CTableHeaderCell scope="col" className="w-20">
-                    Checked In
-                  </CTableHeaderCell>
-                  <CTableHeaderCell scope="col" className="w-20">
-                    Checked Out
+                    Created At
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" className="w-20">
                     Action
@@ -232,26 +316,50 @@ const Products = () => {
                 {products ? (
                   products.map((product) => (
                     <CTableRow key={product.key}>
+                      <CTableDataCell>
+                        {product.image === '' ? (
+                          <CAvatar color="secondary">{product.title[0]}</CAvatar>
+                        ) : (
+                          <CImage rounded src={product.image} width={150} height={100} />
+                        )}
+                      </CTableDataCell>
                       <CTableDataCell>{product.id}</CTableDataCell>
                       <CTableDataCell>{product.title}</CTableDataCell>
-                      <CTableDataCell>{findTitle(product.assignedUser)}</CTableDataCell>
-                      <CTableDataCell>{findTitle(product.assignedDept)}</CTableDataCell>
                       <CTableDataCell>
-                        {moment(product.checkedIn.seconds * 1000).format('DD MMM, YYYY ddd')}
+                        {moment(product.createdAt.seconds * 1000).format('DD MMM, YYYY ddd')}
                       </CTableDataCell>
                       <CTableDataCell>
-                        {moment(product.checkedOut.seconds * 1000).format('DD MMM, YYYY ddd')}
-                      </CTableDataCell>
-                      <CTableDataCell style={{ display: 'flex', gap: 20 }}>
-                        <Link to={`/products/edit/${product.key}`}>
-                          <CIcon style={{ color: 'yellow' }} size="lg" icon={cilPencil} />
-                        </Link>
-                        <CIcon
-                          style={{ color: 'red', cursor: 'pointer' }}
-                          size="lg"
-                          icon={cilTrash}
-                          onClick={() => handleDelete(product.key)}
-                        />
+                        {state.user && state.user.role === 'admin' ? (
+                          <>
+                            <Link to={`/products/edit/${product.key}`}>
+                              <CButton color="primary">Edit</CButton>
+                            </Link>
+                            <CButton
+                              style={{ marginLeft: '10px' }}
+                              color="danger"
+                              onClick={() => handleDelete(product.key)}
+                            >
+                              Delete
+                            </CButton>
+                          </>
+                        ) : userDetails ? (
+                          <div>
+                            {userDetails.currentAssigned &&
+                            userDetails.currentAssigned.filter(
+                              (item) => item.productKey === product.key,
+                            ).length > 0 ? (
+                              <CButton color="primary" onClick={() => handleCheckOut(product)}>
+                                Check Out
+                              </CButton>
+                            ) : (
+                              <CButton color="primary" onClick={() => handleCheckIn(product)}>
+                                Check In
+                              </CButton>
+                            )}
+                          </div>
+                        ) : (
+                          <CIcon icon={cilCart} />
+                        )}
                       </CTableDataCell>
                     </CTableRow>
                   ))

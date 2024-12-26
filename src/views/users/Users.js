@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import {
+  CAvatar,
   CButton,
   CCard,
   CCardBody,
@@ -18,7 +19,7 @@ import {
 } from '@coreui/react'
 import { Link } from 'react-router-dom'
 import CIcon from '@coreui/icons-react'
-import { cilPencil, cilSearch, cilTrash } from '@coreui/icons'
+import { cilPencil, cilSearch, cilTrash, cilUser } from '@coreui/icons'
 import { toast } from 'react-toastify'
 import {
   collection,
@@ -219,13 +220,11 @@ const Users = () => {
                   users.map((user, i) => (
                     <CTableRow key={user.key}>
                       <CTableDataCell>
-                        <div className="avatar">
-                          <img
-                            className="avatar-img"
-                            src="/src/assets/images/avatars/8.jpg"
-                            alt="favicon"
-                          />
-                        </div>
+                        {user.image === '' ? (
+                          <CAvatar color="secondary">{user.name[0]}</CAvatar>
+                        ) : (
+                          <CAvatar src={user.image} />
+                        )}
                       </CTableDataCell>
                       <CTableDataCell>{user.name}</CTableDataCell>
                       <CTableDataCell>{user.email}</CTableDataCell>
@@ -234,19 +233,22 @@ const Users = () => {
                         {moment(user.createdAt.seconds * 1000).format('DD MMM, YYYY')}
                       </CTableDataCell>
                       {state && state.user && state.user.role === 'admin' ? (
-                        <CTableDataCell style={{ display: 'flex', gap: 20 }}>
+                        <CTableDataCell>
                           <Link to={`/users/edit/${user.key}`}>
-                            <CIcon style={{ color: 'yellow' }} size="lg" icon={cilPencil} />
+                            <CButton color="primary">Edit</CButton>
                           </Link>
-                          <CIcon
-                            style={{ color: 'red', cursor: 'pointer' }}
-                            size="lg"
-                            icon={cilTrash}
+                          <CButton
+                            style={{ marginLeft: '10px' }}
+                            color="danger"
                             onClick={() => handleDelete(user.key)}
-                          />
+                          >
+                            Delete
+                          </CButton>
                         </CTableDataCell>
                       ) : (
-                        <CTableDataCell style={{ display: 'flex', gap: 20 }}>N / A</CTableDataCell>
+                        <CTableDataCell>
+                          <CIcon style={{ color: 'white' }} size="lg" icon={cilUser} />
+                        </CTableDataCell>
                       )}
                     </CTableRow>
                   ))

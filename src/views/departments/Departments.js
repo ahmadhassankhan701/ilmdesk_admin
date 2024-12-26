@@ -18,7 +18,7 @@ import {
 } from '@coreui/react'
 import { Link } from 'react-router-dom'
 import CIcon from '@coreui/icons-react'
-import { cilPencil, cilSearch, cilTrash } from '@coreui/icons'
+import { cilBuilding, cilPencil, cilSearch, cilTrash } from '@coreui/icons'
 import { toast } from 'react-toastify'
 import {
   collection,
@@ -32,14 +32,16 @@ import {
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import moment from 'moment'
+import { useAuth } from '../../context/AuthContext'
 const Departments = () => {
+  const { state } = useAuth()
   const [depts, setDepts] = useState([])
   const [lastVisible, setLastVisible] = useState({})
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     fetchDepts()
-  }, [])
+  }, [state && state.user])
   const fetchDepts = async () => {
     try {
       setLoading(true)
@@ -132,7 +134,7 @@ const Departments = () => {
       const docRef = doc(db, `Departments/${id}`)
       await deleteDoc(docRef)
       const newDepts = depts
-        .filter((dept) => dept.deptId !== id)
+        .filter((dept) => dept.key !== id)
         .sort((a, b) => a.createdAt - b.createdAt)
       setDepts(newDepts)
       setLoading(false)
@@ -168,13 +170,15 @@ const Departments = () => {
             style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}
           >
             <strong>Departments</strong>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Link to="/departments/add">
-                <CButton color="primary" shape="pill" size="sm">
-                  Add new
-                </CButton>
-              </Link>
-            </div>
+            {state.user && state.user.role === 'admin' && (
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Link to="/departments/add">
+                  <CButton color="primary" shape="pill" size="sm">
+                    Add new
+                  </CButton>
+                </Link>
+              </div>
+            )}
           </CCardHeader>
           <CCardBody>
             <div
@@ -230,17 +234,24 @@ const Departments = () => {
                       <CTableDataCell>
                         {moment(dept.updatedAt.seconds * 1000).format('DD MMM, YYYY ddd')}
                       </CTableDataCell>
-                      <CTableDataCell style={{ display: 'flex', gap: 20 }}>
-                        <Link to={`/departments/edit/${dept.deptId}`}>
-                          <CIcon style={{ color: 'yellow' }} size="lg" icon={cilPencil} />
-                        </Link>
-                        <CIcon
-                          style={{ color: 'red', cursor: 'pointer' }}
-                          size="lg"
-                          icon={cilTrash}
-                          onClick={() => handleDelete(dept.deptId)}
-                        />
-                      </CTableDataCell>
+                      {state.user && state.user.role === 'admin' ? (
+                        <CTableDataCell>
+                          <Link to={`/departments/edit/${dept.key}`}>
+                            <CButton color="primary">Edit</CButton>
+                          </Link>
+                          <CButton
+                            style={{ marginLeft: '10px' }}
+                            color="danger"
+                            onClick={() => handleDelete(dept.key)}
+                          >
+                            Delete
+                          </CButton>
+                        </CTableDataCell>
+                      ) : (
+                        <CTableDataCell>
+                          <CIcon style={{ color: 'white' }} size="lg" icon={cilBuilding} />
+                        </CTableDataCell>
+                      )}
                     </CTableRow>
                   ))
                 ) : (

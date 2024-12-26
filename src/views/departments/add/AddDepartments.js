@@ -10,7 +10,7 @@ import {
   CRow,
 } from '@coreui/react'
 import { toast } from 'react-toastify'
-import { doc, setDoc } from 'firebase/firestore'
+import { addDoc, collection, doc, setDoc } from 'firebase/firestore'
 import { db } from '../../../firebase'
 const AddDepartments = () => {
   const [deptId, setDeptId] = useState('')
@@ -19,8 +19,8 @@ const AddDepartments = () => {
   const handleSubmit = async () => {
     try {
       setLoading(true)
-      const docRef = doc(db, `Departments/${deptId}`)
-      await setDoc(docRef, { deptId, deptTitle, createdAt: new Date(), updatedAt: new Date() })
+      const docRef = collection(db, `Departments`)
+      await addDoc(docRef, { deptId, deptTitle, createdAt: new Date(), updatedAt: new Date() })
       setLoading(false)
       toast.success('Department Added successfully!')
     } catch (error) {

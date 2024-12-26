@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import {
   CButton,
   CCard,
@@ -7,86 +7,30 @@ import {
   CCol,
   CForm,
   CFormInput,
-  CFormSelect,
   CFormTextarea,
+  CImage,
   CRow,
+  CSpinner,
 } from '@coreui/react'
-import { addDoc, collection, doc, getDocs } from 'firebase/firestore'
-import { db } from '../../../firebase'
+import { addDoc, collection } from 'firebase/firestore'
+import { db, storage } from '../../../firebase'
 import { toast } from 'react-toastify'
+import CIcon from '@coreui/icons-react'
+import { cilCamera } from '@coreui/icons'
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 const AddProducts = () => {
-  const [checkedIn, setCheckedIn] = useState('')
-  const [checkedOut, setCheckedOut] = useState('')
   const [product, setProduct] = useState({
     id: '',
     title: '',
     desc: '',
     barcode: '',
-    assignedUser: '',
-    assignedDept: '',
+    image: '',
   })
-  const [depts, setDepts] = useState([])
-  const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
-  useEffect(() => {
-    fetchDepts()
-    fetchUsers()
-  }, [])
-  const fetchUsers = async () => {
-    try {
-      setLoading(true)
-      const docRef = collection(db, 'Users')
-      const docSnap = await getDocs(docRef)
-      if (docSnap.size == 0) {
-        setLoading(false)
-        toast.info('No user found')
-        return
-      }
-      let userItems = []
-      docSnap.forEach((item) => {
-        userItems.push({ key: item.id, title: item.data().name })
-      })
-      setUsers(userItems)
-      setLoading(false)
-    } catch (error) {
-      setLoading(false)
-      toast.error('Error fetching users')
-      console.log(error)
-    }
-  }
-  const fetchDepts = async () => {
-    try {
-      setLoading(true)
-      const docRef = collection(db, 'Departments')
-      const docSnap = await getDocs(docRef)
-      if (docSnap.size == 0) {
-        setLoading(false)
-        toast.info('No department found')
-        return
-      }
-      let deptItems = []
-      docSnap.forEach((item) => {
-        deptItems.push({ key: item.id, title: item.data().deptTitle })
-      })
-      setDepts(deptItems)
-      setLoading(false)
-    } catch (error) {
-      setLoading(false)
-      toast.error('Error fetching departments')
-      console.log(error)
-    }
-  }
+  const [uploading, setUploading] = useState(false)
+
   const handleSubmit = async () => {
-    if (
-      !product.id ||
-      !product.title ||
-      !product.desc ||
-      !product.barcode ||
-      !product.assignedUser ||
-      !product.assignedDept ||
-      !checkedIn ||
-      !checkedOut
-    ) {
+    if (!product.id || !product.title || !product.desc || !product.barcode) {
       toast.error('All fields are required')
       return
     }
@@ -95,8 +39,7 @@ const AddProducts = () => {
       const docRef = collection(db, 'Products')
       await addDoc(docRef, {
         ...product,
-        checkedIn: new Date(checkedIn),
-        checkedOut: new Date(checkedOut),
+        currentCheckedUsers: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -105,6 +48,52 @@ const AddProducts = () => {
     } catch (error) {
       setLoading(false)
       toast.error('Failed adding product')
+      console.log(error)
+    }
+  }
+  const randomId = () => {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()'
+    let result = ''
+    const charactersLength = characters.length
+    for (let i = 0; i < 10; i++) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength))
+    }
+    return result
+  }
+  const handleImageUpload = async (e) => {
+    try {
+      setUploading(true)
+      const file = e.target.files[0]
+      if (file === undefined || file === null) {
+        setUploading(false)
+        return
+      }
+      const formData = new FormData()
+      formData.append('document', file)
+      const filedata = [...formData]
+      const filename = filedata[0][1].name
+      const fileExtension = filename.split('.').pop()
+      const fileSize = filedata[0][1].size
+      if (fileExtension !== 'png' && fileExtension !== 'jpg' && fileExtension !== 'jpeg') {
+        setUploading(false)
+        toast.error('File type should be png, jpg or jpeg')
+        return
+      }
+      if (fileSize > 2000000) {
+        setUploading(false)
+        toast.error('File size should not exceed 2MB')
+        return
+      }
+      const path = `ProductImages/${randomId()}`
+      const storageRef = ref(storage, path)
+      await uploadBytes(storageRef, file)
+      const url = await getDownloadURL(storageRef)
+      setProduct({ ...product, image: url })
+      setUploading(false)
+      toast.success('Image uploaded successfully')
+    } catch (error) {
+      setUploading(false)
+      toast.error('Error uploading image')
       console.log(error)
     }
   }
@@ -134,6 +123,41 @@ const AddProducts = () => {
               </div>
             )}
             <CForm>
+              <div className="mb-3">
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    flexDirection: 'column',
+                  }}
+                >
+                  <CImage
+                    align="center"
+                    rounded
+                    src={product.image === '' ? '/favicon.ico' : product.image}
+                    width={200}
+                    height={200}
+                  />
+                  {uploading ? (
+                    <CSpinner color="light" />
+                  ) : (
+                    <label htmlFor="upload" style={{ marginTop: '10px' }}>
+                      <CIcon
+                        style={{ color: 'white', cursor: 'pointer' }}
+                        size="lg"
+                        icon={cilCamera}
+                      />
+                      <input
+                        type="file"
+                        id="upload"
+                        style={{ display: 'none' }}
+                        onChange={handleImageUpload}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
               <div className="mb-3">
                 <CFormInput
                   type="text"
@@ -169,64 +193,6 @@ const AddProducts = () => {
                   value={product.barcode}
                   onChange={(e) => setProduct({ ...product, barcode: e.target.value })}
                 />
-              </div>
-              <div className="mb-3">
-                <CFormSelect
-                  aria-label="Default select example"
-                  onChange={(e) => setProduct({ ...product, assignedUser: e.target.value })}
-                >
-                  <option>Select User to Assign</option>
-                  {users &&
-                    users.map((user) => (
-                      <option key={user.key} value={`${user.key}-${user.title}`}>
-                        {user.title}
-                      </option>
-                    ))}
-                </CFormSelect>
-              </div>
-              <div className="mb-5">
-                <CFormSelect
-                  aria-label="Default select example"
-                  onChange={(e) => setProduct({ ...product, assignedDept: e.target.value })}
-                >
-                  <option>Select Department to Assign</option>
-                  {depts &&
-                    depts.map((dept) => (
-                      <option key={dept.key} value={`${dept.key}-${dept.title}`}>
-                        {dept.title}
-                      </option>
-                    ))}
-                </CFormSelect>
-              </div>
-              <div
-                className="mb-5"
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: 10,
-                }}
-              >
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <label htmlFor="checked">Checked In:</label>
-                  <input
-                    type="datetime-local"
-                    id="checked"
-                    name="checked"
-                    value={checkedIn}
-                    onChange={(e) => setCheckedIn(e.target.value)}
-                  />
-                </div>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <label htmlFor="checkedout">Checked Out:</label>
-                  <input
-                    type="datetime-local"
-                    id="checkedout"
-                    name="checkedout"
-                    value={checkedOut}
-                    onChange={(e) => setCheckedOut(e.target.value)}
-                  />
-                </div>
               </div>
               <CButton className="w-100" color="primary" onClick={handleSubmit}>
                 Submit

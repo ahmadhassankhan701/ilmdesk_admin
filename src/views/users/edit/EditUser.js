@@ -103,7 +103,8 @@ const EditUser = () => {
                   type="text"
                   placeholder="Name"
                   value={user.name}
-                  onChange={(e) => setUser({ ...user, name: e.target.value })}
+                  onChange={() => {}}
+                  disabled
                 />
               </CInputGroup>
               <CInputGroup className="mb-3">
@@ -112,7 +113,8 @@ const EditUser = () => {
                   placeholder="Email"
                   autoComplete="email"
                   value={user.email}
-                  onChange={(e) => setUser({ ...user, email: e.target.value })}
+                  onChange={() => {}}
+                  disabled
                 />
               </CInputGroup>
               <CInputGroup className="mb-3">
