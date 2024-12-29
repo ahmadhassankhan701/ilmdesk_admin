@@ -172,7 +172,7 @@ const Products = () => {
       console.log(error)
     }
   }
-  const handleCheckIn = async (product) => {
+  const handleCheckOut = async (product) => {
     try {
       setLoading(true)
       const docRef = collection(db, 'AssignedHistory')
@@ -183,8 +183,8 @@ const Products = () => {
         userId: userDetails.key,
         userName: userDetails.name,
         userImage: userDetails.image,
-        checkedInAt: new Date(),
-        checkedOutAt: '',
+        checkedInAt: '',
+        checkedOutAt: new Date(),
       })
       let currentlyAssigned = []
       if (userDetails.currentAssigned && userDetails.currentAssigned.length > 0) {
@@ -196,15 +196,15 @@ const Products = () => {
         currentAssigned: currentlyAssigned,
       })
       setLoading(false)
-      toast.success('Check In Successful')
+      toast.success('Check Out Successful')
       navigate('/history')
     } catch (error) {
       setLoading(false)
-      toast.error('Failed check in')
+      toast.error('Failed check out')
       console.log(error)
     }
   }
-  const handleCheckOut = async (product) => {
+  const handleCheckIn = async (product) => {
     try {
       setLoading(true)
       let currentlyAssignedKey = ''
@@ -224,14 +224,14 @@ const Products = () => {
         currentAssigned: currentlyAssigned,
       })
       await updateDoc(docRef, {
-        checkedOutAt: new Date(),
+        checkedInAt: new Date(),
       })
       setLoading(false)
-      toast.success('Check Out Successful')
+      toast.success('Check In Successful')
       navigate('/history')
     } catch (error) {
       setLoading(false)
-      toast.error('Failed check out')
+      toast.error('Failed check in')
       console.log(error)
     }
   }
@@ -348,12 +348,12 @@ const Products = () => {
                             userDetails.currentAssigned.filter(
                               (item) => item.productKey === product.key,
                             ).length > 0 ? (
-                              <CButton color="primary" onClick={() => handleCheckOut(product)}>
-                                Check Out
-                              </CButton>
-                            ) : (
                               <CButton color="primary" onClick={() => handleCheckIn(product)}>
                                 Check In
+                              </CButton>
+                            ) : (
+                              <CButton color="primary" onClick={() => handleCheckOut(product)}>
+                                Check Out
                               </CButton>
                             )}
                           </div>

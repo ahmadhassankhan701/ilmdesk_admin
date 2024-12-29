@@ -16,7 +16,7 @@ const _nav = [
   },
   {
     component: CNavItem,
-    name: 'Products',
+    name: 'Tools',
     to: '/products',
     icon: <CIcon icon={cilCart} customClassName="nav-icon" />,
   },
