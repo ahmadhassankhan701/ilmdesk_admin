@@ -57,7 +57,7 @@ const History = () => {
     try {
       setLoading(true)
       const docRef = collection(db, 'AssignedHistory')
-      const q = query(docRef, orderBy('checkedInAt', 'desc'))
+      const q = query(docRef, orderBy('checkedOutAt', 'desc'))
       const docSnap = await getDocs(q)
       if (docSnap.size == 0) {
         setLoading(false)
@@ -202,12 +202,14 @@ const History = () => {
                       <CTableDataCell>{hist.productTitle}</CTableDataCell>
                       <CTableDataCell>{hist.userName}</CTableDataCell>
                       <CTableDataCell>
-                        {moment(hist.checkedInAt.seconds * 1000).format('DD MMM, YYYY ddd')}
+                        {hist.checkedInAt === ''
+                          ? 'Not Yet'
+                          : moment(hist.checkedInAt.seconds * 1000).format('DD MMM, YYYY hh:mm A')}
                       </CTableDataCell>
                       <CTableDataCell>
                         {hist.checkedOutAt === ''
                           ? 'Not Yet'
-                          : moment(hist.checkedOutAt.seconds * 1000).format('DD MMM, YYYY ddd')}
+                          : moment(hist.checkedOutAt.seconds * 1000).format('DD MMM, YYYY hh:mm A')}
                       </CTableDataCell>
                     </CTableRow>
                   ))

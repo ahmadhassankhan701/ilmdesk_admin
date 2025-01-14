@@ -16,7 +16,7 @@ import { useAuth } from '../../context/AuthContext'
 import { signOut } from 'firebase/auth'
 import { auth } from '../../firebase'
 import Cookies from 'js-cookie'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 const AppHeaderDropdown = () => {
   const { setState } = useAuth()
@@ -45,10 +45,12 @@ const AppHeaderDropdown = () => {
           <CIcon icon={cilUser} className="me-2" />
           Profile
         </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilSettings} className="me-2" />
-          Settings
-        </CDropdownItem>
+        <Link to="/users/update-password" style={{ textDecoration: 'none' }}>
+          <CDropdownItem href="#">
+            <CIcon icon={cilLockLocked} className="me-2" />
+            Update Password
+          </CDropdownItem>
+        </Link>
         <CDropdownDivider />
         <div
           onClick={handleLogout}

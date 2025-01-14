@@ -7,12 +7,13 @@ import {
   CCol,
   CForm,
   CFormInput,
+  CFormSelect,
   CFormTextarea,
   CImage,
   CRow,
   CSpinner,
 } from '@coreui/react'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore'
 import { db, storage } from '../../../firebase'
 import { toast } from 'react-toastify'
 import { useParams } from 'react-router-dom'
@@ -21,15 +22,39 @@ import { cilCamera } from '@coreui/icons'
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 const EditProduct = () => {
   const { id } = useParams()
+  const [depts, setDepts] = useState([])
   const [product, setProduct] = useState({
-    id: '',
-    title: '',
+    name: '',
+    serial: '',
     desc: '',
-    barcode: '',
+    location: '',
+    dept: '',
     image: '',
   })
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  useEffect(() => {
+    const getDepartments = async () => {
+      try {
+        setLoading(true)
+        const depts = collection(db, 'Departments')
+        const deptDoc = await getDocs(depts)
+        let deptItems = []
+        if (deptDoc.size > 0) {
+          deptDoc.forEach((item) => {
+            deptItems.push({ key: item.id, title: item.data().deptTitle })
+          })
+        }
+        setDepts(deptItems)
+        setLoading(false)
+      } catch (error) {
+        setLoading(false)
+        toast.error('Failed to fetch departments')
+        console.log(error)
+      }
+    }
+    getDepartments()
+  }, [])
   useEffect(() => {
     fetchProduct()
   }, [id])
@@ -42,23 +67,24 @@ const EditProduct = () => {
         const docData = docSnap.data()
         setProduct({
           ...product,
-          id: docData.id,
-          title: docData.title,
+          name: docData.name,
+          serial: docData.serial,
           desc: docData.desc,
-          barcode: docData.barcode,
+          location: docData.location,
+          dept: docData.dept,
           image: docData.image,
         })
       }
       setLoading(false)
     } catch (error) {
       setLoading(false)
-      toast.error('Error fetching product')
+      toast.error('Error fetching tool')
       console.log(error)
     }
   }
 
   const handleSubmit = async () => {
-    if (!product.id || !product.title || !product.desc || !product.barcode) {
+    if (!product.name || !product.serial || !product.desc || !product.location || !product.dept) {
       toast.error('All fields are required')
       return
     }
@@ -70,10 +96,10 @@ const EditProduct = () => {
         updatedAt: new Date(),
       })
       setLoading(false)
-      toast.success('Product updated successfully!')
+      toast.success('Tool updated successfully!')
     } catch (error) {
       setLoading(false)
-      toast.error('Failed updating product')
+      toast.error('Failed updating tool')
       console.log(error)
     }
   }
@@ -128,7 +154,7 @@ const EditProduct = () => {
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader>
-            <strong>Edit Product</strong>
+            <strong>Edit Tool</strong>
           </CCardHeader>
           <CCardBody>
             {loading && (
@@ -168,7 +194,7 @@ const EditProduct = () => {
                   {uploading ? (
                     <CSpinner color="light" />
                   ) : (
-                    <label for="upload" style={{ marginTop: '10px' }}>
+                    <label htmlFor="upload" style={{ marginTop: '10px' }}>
                       <CIcon
                         style={{ color: 'white', cursor: 'pointer' }}
                         size="lg"
@@ -188,18 +214,18 @@ const EditProduct = () => {
                 <CFormInput
                   type="text"
                   id="exampleFormControlInput1"
-                  placeholder="Item Identity"
-                  value={product.id}
-                  onChange={(e) => setProduct({ ...product, id: e.target.value })}
+                  placeholder="Name"
+                  value={product.name}
+                  onChange={(e) => setProduct({ ...product, name: e.target.value })}
                 />
               </div>
               <div className="mb-3">
                 <CFormInput
                   type="text"
                   id="exampleFormControlInput2"
-                  placeholder="Title..."
-                  value={product.title}
-                  onChange={(e) => setProduct({ ...product, title: e.target.value })}
+                  placeholder="Serial # or ID #"
+                  value={product.serial}
+                  onChange={(e) => setProduct({ ...product, serial: e.target.value })}
                 />
               </div>
               <div className="mb-3">
@@ -215,11 +241,26 @@ const EditProduct = () => {
                 <CFormInput
                   type="text"
                   id="exampleFormControlInput2"
-                  placeholder="Barcode or serial..."
-                  value={product.barcode}
-                  onChange={(e) => setProduct({ ...product, barcode: e.target.value })}
+                  placeholder="Location"
+                  value={product.location}
+                  onChange={(e) => setProduct({ ...product, location: e.target.value })}
                 />
               </div>
+              {depts && (
+                <CFormSelect
+                  id="inputGroupSelect01"
+                  onChange={(e) => setProduct({ ...product, dept: e.target.value })}
+                  value={product.dept}
+                  className="mb-3"
+                >
+                  <option>Department</option>
+                  {depts.map((item) => (
+                    <option key={item.key} value={`${item.key}-${item.title}`}>
+                      {item.title}
+                    </option>
+                  ))}
+                </CFormSelect>
+              )}
               <CButton className="w-100" color="primary" onClick={handleSubmit}>
                 Update
               </CButton>

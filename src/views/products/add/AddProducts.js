@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   CButton,
   CCard,
@@ -7,30 +7,57 @@ import {
   CCol,
   CForm,
   CFormInput,
+  CFormSelect,
   CFormTextarea,
   CImage,
+  CInputGroup,
+  CInputGroupText,
   CRow,
   CSpinner,
 } from '@coreui/react'
-import { addDoc, collection } from 'firebase/firestore'
+import { addDoc, collection, getDocs } from 'firebase/firestore'
 import { db, storage } from '../../../firebase'
 import { toast } from 'react-toastify'
 import CIcon from '@coreui/icons-react'
-import { cilCamera } from '@coreui/icons'
+import { cilBuilding, cilCamera } from '@coreui/icons'
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 const AddProducts = () => {
+  const [depts, setDepts] = useState([])
   const [product, setProduct] = useState({
-    id: '',
-    title: '',
+    name: '',
+    serial: '',
     desc: '',
-    barcode: '',
+    location: '',
+    dept: '',
     image: '',
   })
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  useEffect(() => {
+    const getDepartments = async () => {
+      try {
+        setLoading(true)
+        const depts = collection(db, 'Departments')
+        const deptDoc = await getDocs(depts)
+        let deptItems = []
+        if (deptDoc.size > 0) {
+          deptDoc.forEach((item) => {
+            deptItems.push({ key: item.id, title: item.data().deptTitle })
+          })
+        }
+        setDepts(deptItems)
+        setLoading(false)
+      } catch (error) {
+        setLoading(false)
+        toast.error('Failed to fetch departments')
+        console.log(error)
+      }
+    }
+    getDepartments()
+  }, [])
 
   const handleSubmit = async () => {
-    if (!product.id || !product.title || !product.desc || !product.barcode) {
+    if (!product.name || !product.serial || !product.desc || !product.location || !product.dept) {
       toast.error('All fields are required')
       return
     }
@@ -39,15 +66,14 @@ const AddProducts = () => {
       const docRef = collection(db, 'Products')
       await addDoc(docRef, {
         ...product,
-        currentCheckedUsers: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       })
       setLoading(false)
-      toast.success('Product added successfully!')
+      toast.success('Tool added successfully!')
     } catch (error) {
       setLoading(false)
-      toast.error('Failed adding product')
+      toast.error('Failed adding tool')
       console.log(error)
     }
   }
@@ -102,7 +128,7 @@ const AddProducts = () => {
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader>
-            <strong>Add New Product</strong>
+            <strong>Add New Tool</strong>
           </CCardHeader>
           <CCardBody>
             {loading && (
@@ -162,18 +188,18 @@ const AddProducts = () => {
                 <CFormInput
                   type="text"
                   id="exampleFormControlInput1"
-                  placeholder="Item Identity"
-                  value={product.id}
-                  onChange={(e) => setProduct({ ...product, id: e.target.value })}
+                  placeholder="Name"
+                  value={product.name}
+                  onChange={(e) => setProduct({ ...product, name: e.target.value })}
                 />
               </div>
               <div className="mb-3">
                 <CFormInput
                   type="text"
                   id="exampleFormControlInput2"
-                  placeholder="Title..."
-                  value={product.title}
-                  onChange={(e) => setProduct({ ...product, title: e.target.value })}
+                  placeholder="Serial # or ID #"
+                  value={product.serial}
+                  onChange={(e) => setProduct({ ...product, serial: e.target.value })}
                 />
               </div>
               <div className="mb-3">
@@ -189,11 +215,26 @@ const AddProducts = () => {
                 <CFormInput
                   type="text"
                   id="exampleFormControlInput2"
-                  placeholder="Barcode or serial..."
-                  value={product.barcode}
-                  onChange={(e) => setProduct({ ...product, barcode: e.target.value })}
+                  placeholder="Location"
+                  value={product.location}
+                  onChange={(e) => setProduct({ ...product, location: e.target.value })}
                 />
               </div>
+              {depts && (
+                <CFormSelect
+                  id="inputGroupSelect01"
+                  onChange={(e) => setProduct({ ...product, dept: e.target.value })}
+                  value={product.dept}
+                  className="mb-3"
+                >
+                  <option>Department</option>
+                  {depts.map((item) => (
+                    <option key={item.key} value={`${item.key}-${item.title}`}>
+                      {item.title}
+                    </option>
+                  ))}
+                </CFormSelect>
+              )}
               <CButton className="w-100" color="primary" onClick={handleSubmit}>
                 Submit
               </CButton>

@@ -50,9 +50,7 @@ const Products = () => {
     fetchProducts()
   }, [state && state.user])
   useEffect(() => {
-    if (state.user.role === 'user') {
-      fetchCurrentAssignedItems()
-    }
+    fetchCurrentAssignedItems()
   }, [state && state.user])
   const fetchCurrentAssignedItems = async () => {
     try {
@@ -77,7 +75,7 @@ const Products = () => {
       const docSnap = await getDocs(q)
       if (docSnap.size == 0) {
         setLoading(false)
-        toast.info('No product found')
+        toast.info('No tool found')
         return
       }
       // Get the last visible document
@@ -91,7 +89,7 @@ const Products = () => {
       setLoading(false)
     } catch (error) {
       setLoading(false)
-      toast.error('Error fetching products')
+      toast.error('Error fetching tools')
       console.log(error)
     }
   }
@@ -178,7 +176,7 @@ const Products = () => {
       const docRef = collection(db, 'AssignedHistory')
       const newDoc = await addDoc(docRef, {
         productId: product.key,
-        productTitle: product.title,
+        productTitle: product.name,
         productImage: product.image,
         userId: userDetails.key,
         userName: userDetails.name,
@@ -235,6 +233,10 @@ const Products = () => {
       console.log(error)
     }
   }
+  const handleSplitString = (str) => {
+    const strArr = str.split('-')
+    return strArr[1]
+  }
   return (
     <CRow style={{ position: 'relative' }}>
       {loading && (
@@ -259,10 +261,10 @@ const Products = () => {
           <CCardHeader
             style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}
           >
-            <strong>Products</strong>
+            <strong>Tools</strong>
             {state.user && state.user.role === 'admin' && (
               <div style={{ display: 'flex', gap: 10 }}>
-                <Link to="/products/add">
+                <Link to="/tools/add">
                   <CButton color="primary" shape="pill" size="sm">
                     Add new
                   </CButton>
@@ -279,7 +281,7 @@ const Products = () => {
                 flexWrap: 'nowrap',
               }}
             >
-              <p className="text-body-secondary small">Find all products here</p>
+              <p className="text-body-secondary small">Find all tools here</p>
               <CInputGroup size="sm" className="flex-nowrap" style={{ width: '30%' }}>
                 <CInputGroupText id="addon-wrapping">
                   <CIcon icon={cilSearch} />
@@ -299,13 +301,16 @@ const Products = () => {
                     Image
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" className="w-20">
-                    ID
+                    Name
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" className="w-20">
-                    Title
+                    Serial #
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" className="w-20">
-                    Created At
+                    Location
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" className="w-20">
+                    Department
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" className="w-20">
                     Action
@@ -318,20 +323,19 @@ const Products = () => {
                     <CTableRow key={product.key}>
                       <CTableDataCell>
                         {product.image === '' ? (
-                          <CAvatar color="secondary">{product.title[0]}</CAvatar>
+                          <CAvatar color="secondary">{product.name[0]}</CAvatar>
                         ) : (
                           <CImage rounded src={product.image} width={150} height={100} />
                         )}
                       </CTableDataCell>
-                      <CTableDataCell>{product.id}</CTableDataCell>
-                      <CTableDataCell>{product.title}</CTableDataCell>
+                      <CTableDataCell>{product.name}</CTableDataCell>
+                      <CTableDataCell>{product.serial}</CTableDataCell>
+                      <CTableDataCell>{product.location}</CTableDataCell>
+                      <CTableDataCell>{handleSplitString(product.dept)}</CTableDataCell>
                       <CTableDataCell>
-                        {moment(product.createdAt.seconds * 1000).format('DD MMM, YYYY ddd')}
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        {state.user && state.user.role === 'admin' ? (
+                        {state.user && state.user.role === 'admin' && (
                           <>
-                            <Link to={`/products/edit/${product.key}`}>
+                            <Link to={`/tools/edit/${product.key}`}>
                               <CButton color="primary">Edit</CButton>
                             </Link>
                             <CButton
@@ -342,17 +346,26 @@ const Products = () => {
                               Delete
                             </CButton>
                           </>
-                        ) : userDetails ? (
+                        )}
+                        {userDetails ? (
                           <div>
                             {userDetails.currentAssigned &&
                             userDetails.currentAssigned.filter(
                               (item) => item.productKey === product.key,
                             ).length > 0 ? (
-                              <CButton color="primary" onClick={() => handleCheckIn(product)}>
+                              <CButton
+                                style={{ marginTop: '10px' }}
+                                color="secondary"
+                                onClick={() => handleCheckIn(product)}
+                              >
                                 Check In
                               </CButton>
                             ) : (
-                              <CButton color="primary" onClick={() => handleCheckOut(product)}>
+                              <CButton
+                                style={{ marginTop: '10px' }}
+                                color="warning"
+                                onClick={() => handleCheckOut(product)}
+                              >
                                 Check Out
                               </CButton>
                             )}

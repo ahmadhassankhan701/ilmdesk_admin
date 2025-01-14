@@ -168,7 +168,20 @@ const Users = () => {
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader>
-            <strong>Users</strong>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <strong>Users</strong>
+              {state && state.user && state.user.role == 'admin' && (
+                <Link to={`/users/new`}>
+                  <CButton color="primary">Create User</CButton>
+                </Link>
+              )}
+            </div>
           </CCardHeader>
           <CCardBody>
             <div
