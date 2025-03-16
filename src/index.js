@@ -1,16 +1,46 @@
-import React from 'react'
-import { createRoot } from 'react-dom/client'
-import { Provider } from 'react-redux'
-import 'core-js'
+/**
+=========================================================
+* Material Dashboard 2 React - v2.2.0
+=========================================================
 
-import App from './App'
-import store from './store'
-import { AuthProvider } from './context/AuthContext'
+* Product Page: https://www.creative-tim.com/product/material-dashboard-react
+* Copyright 2023 Creative Tim (https://www.creative-tim.com)
 
-createRoot(document.getElementById('root')).render(
-  <Provider store={store}>
-    <AuthProvider>
+Coded by www.creative-tim.com
+
+=========================================================
+
+* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+*/
+
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "App";
+
+// Material Dashboard 2 React Context Provider
+import { MaterialUIControllerProvider } from "context";
+import { ToastContainer } from "react-toastify";
+
+const container = document.getElementById("app");
+const root = createRoot(container);
+
+root.render(
+  <BrowserRouter>
+    <MaterialUIControllerProvider>
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
       <App />
-    </AuthProvider>
-  </Provider>,
-)
+    </MaterialUIControllerProvider>
+  </BrowserRouter>
+);
