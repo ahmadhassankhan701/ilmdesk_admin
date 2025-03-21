@@ -148,27 +148,30 @@ const Quizzes = () => {
             const formattedQuestions = rows
               .map((row) => {
                 const options = [
-                  (row["Option 1"] || "").trim(),
-                  (row["Option 2"] || "").trim(),
-                  (row["Option 3"] || "").trim(),
-                  (row["Option 4"] || "").trim(),
+                  row["Option 1"] || "",
+                  row["Option 2"] || "",
+                  row["Option 3"] || "",
+                  row["Option 4"] || "",
                 ];
-
                 if (
                   !row["Question"] ||
-                  !options.every((opt) => opt) ||
-                  !row["Correct Option"] ||
-                  !row["Explanation"]
+                  typeof row["Question"] !== "string" ||
+                  !row["Question"].trim()
                 ) {
-                  console.error("Invalid row data");
+                  return null;
+                }
+                if (!Array.isArray(options) || options.length < 2) {
+                  return null;
+                }
+                if (!row["Correct Option"]) {
                   return null;
                 }
 
                 return {
-                  question: (row["Question"] || "").trim(),
+                  question: row["Question"],
                   options,
                   correctOption: Math.max(0, Math.min(3, (row["Correct Option"] || 1) - 1)),
-                  explanation: (row["Explanation"] || "").trim(),
+                  explanation: row["Explanation"] || "",
                 };
               })
               .filter(Boolean);
@@ -308,25 +311,26 @@ const Quizzes = () => {
                           </MenuItem>
                         </Select>
                       </FormControl>
-
-                      <TextField
-                        id="outlined-basic"
-                        label="Duration (mins)"
-                        variant="outlined"
-                        fullWidth
-                        InputLabelProps={{ style: { fontSize: 14 } }}
-                        sx={{
-                          ".MuiInputBase-input": { fontSize: "0.9rem" },
-                        }}
-                        inputProps={{
-                          type: "number",
-                          style: {
-                            height: "20px",
-                          },
-                        }}
-                        value={details.duration}
-                        onChange={(e) => setDetails({ ...details, duration: e.target.value })}
-                      />
+                      {details.mode && details.mode === "online" && (
+                        <TextField
+                          id="outlined-basic"
+                          label="Duration (mins)"
+                          variant="outlined"
+                          fullWidth
+                          InputLabelProps={{ style: { fontSize: 14 } }}
+                          sx={{
+                            ".MuiInputBase-input": { fontSize: "0.9rem" },
+                          }}
+                          inputProps={{
+                            type: "number",
+                            style: {
+                              height: "20px",
+                            },
+                          }}
+                          value={details.duration}
+                          onChange={(e) => setDetails({ ...details, duration: e.target.value })}
+                        />
+                      )}
                     </Box>
                     <Box>
                       <Box
