@@ -37,7 +37,7 @@ const Courses = () => {
   const handleDelete = async (courseId) => {
     try {
       const confirm = window.confirm(
-        "Fatal! This will delete everything about this course. Are you sure?"
+        "Beware! This will delete everything about this course. Are you sure?"
       );
       if (!confirm) return;
 
