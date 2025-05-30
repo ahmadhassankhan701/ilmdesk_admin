@@ -7,7 +7,7 @@ import ClassesTheory from "layouts/classes/theory";
 import CourseTheory from "layouts/courses/theory";
 import ClassQuiz from "layouts/classes/quiz";
 import CourseQuiz from "layouts/courses/quiz";
-import Tables from "layouts/tables";
+import Payments from "layouts/payments";
 import Billing from "layouts/billing";
 import RTL from "layouts/rtl";
 import Notifications from "layouts/notifications";
@@ -79,11 +79,11 @@ const routes = [
   },
   {
     type: "collapse",
-    name: "Tables",
-    key: "tables",
+    name: "Payments",
+    key: "payments",
     icon: <Icon fontSize="small">table_view</Icon>,
-    route: "/tables",
-    component: <Tables />,
+    route: "/payments",
+    component: <Payments />,
   },
   {
     type: "collapse",
