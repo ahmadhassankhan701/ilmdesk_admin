@@ -63,6 +63,7 @@ const Curriculum = () => {
 
     const dataToAdd = {
       name: newItemName,
+      createdAt: new Date(),
       ...(selectedClass && { classID: selectedClass }),
       ...(selectedSubject && { subjectID: selectedSubject }),
       ...(selectedBranch && { branchID: selectedBranch }),
