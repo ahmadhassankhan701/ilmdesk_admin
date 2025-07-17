@@ -1,7 +1,17 @@
 import { useState, useEffect } from "react";
-import { Card, Grid, IconButton, InputAdornment, OutlinedInput } from "@mui/material";
+import { Box, Card, Grid, IconButton, InputAdornment, OutlinedInput } from "@mui/material";
 import { db } from "../../firebase"; // Firebase config
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+  doc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -11,7 +21,14 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import { AddCircleOutline, UndoOutlined } from "@mui/icons-material";
+import {
+  AddCircleOutline,
+  ArrowCircleRight,
+  Cancel,
+  Delete,
+  Edit,
+  UndoOutlined,
+} from "@mui/icons-material";
 
 const Curriculum = () => {
   const [selectedClass, setSelectedClass] = useState(null);
@@ -20,6 +37,10 @@ const Curriculum = () => {
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [data, setData] = useState([]);
   const [newItemName, setNewItemName] = useState("");
+  const [editValue, setEditValue] = useState({
+    name: "",
+    id: null,
+  });
 
   const fetchData = async (collectionName, field, value) => {
     const ref = collection(db, collectionName);
@@ -86,6 +107,56 @@ const Curriculum = () => {
     fetchHierarchy();
   }, [selectedClass, selectedSubject, selectedBranch, selectedChapter]);
 
+  const handleDelete = async (id) => {
+    const collectionName = selectedChapter
+      ? "topics"
+      : selectedBranch
+      ? "chapters"
+      : selectedSubject
+      ? "branches"
+      : selectedClass
+      ? "subjects"
+      : "classes";
+
+    const docRef = doc(db, collectionName, id);
+    // Check if the document exists
+    const docSnapshot = await getDoc(docRef);
+    if (!docSnapshot.exists()) {
+      console.error("Document does not exist");
+      return;
+    }
+    // Delete the document
+    await deleteDoc(docRef);
+    // Refresh the hierarchy after deletion
+    fetchHierarchy();
+  };
+  const handleEdit = async () => {
+    const collectionName = selectedChapter
+      ? "topics"
+      : selectedBranch
+      ? "chapters"
+      : selectedSubject
+      ? "branches"
+      : selectedClass
+      ? "subjects"
+      : "classes";
+
+    const docRef = doc(db, collectionName, editValue.id);
+    // Check if the document exists
+    const docSnapshot = await getDoc(docRef);
+    if (!docSnapshot.exists()) {
+      console.error("Document does not exist");
+      return;
+    }
+    // Update the document
+    await updateDoc(docRef, {
+      name: editValue.name,
+    });
+    // Clear the edit value and refresh the hierarchy
+    setEditValue({ name: "", id: null });
+    setNewItemName(""); // Clear new item input when editing
+    fetchHierarchy();
+  };
   return (
     <DashboardLayout>
       <DashboardNavbar />
@@ -130,42 +201,105 @@ const Curriculum = () => {
                   />
                 </MDBox>
                 <div className="flex gap-4 mb-6">
-                  {data.map((item) => (
-                    <MDBox
-                      key={item.id}
-                      display={"flex"}
-                      alignItems={"center"}
-                      justifyContent={"center"}
-                      p={2}
-                      lineHeight={0}
-                      onClick={() =>
-                        selectedChapter
-                          ? (() => {})()
-                          : handleClick(
-                              selectedClass
-                                ? selectedSubject
-                                  ? selectedBranch
-                                    ? setSelectedChapter
-                                    : setSelectedBranch
-                                  : setSelectedSubject
-                                : setSelectedClass,
-                              item.id
-                            )
-                      }
-                    >
-                      <Card sx={{ mb: 1, width: "100%", cursor: "pointer" }}>
-                        <MDBox
-                          p={2}
-                          lineHeight={0}
-                          display={"flex"}
-                          alignItems={"center"}
-                          justifyContent={"center"}
-                        >
-                          <MDTypography variant="h5">{item.name}</MDTypography>
-                        </MDBox>
-                      </Card>
-                    </MDBox>
-                  ))}
+                  {data
+                    ?.slice() // to avoid mutating original data
+                    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+                    .map((item) => (
+                      <MDBox
+                        key={item.id}
+                        display={"flex"}
+                        alignItems={"center"}
+                        justifyContent={"center"}
+                        p={2}
+                        lineHeight={0}
+                      >
+                        <Card sx={{ mb: 1, width: "100%", cursor: "pointer" }}>
+                          {editValue.id === item.id ? (
+                            <MDBox
+                              p={2}
+                              display={"flex"}
+                              alignItems={"center"}
+                              justifyContent={"space-between"}
+                              sx={{ width: "100%" }}
+                            >
+                              <OutlinedInput
+                                fullWidth
+                                value={editValue.name}
+                                onChange={(e) =>
+                                  setEditValue({ ...editValue, name: e.target.value })
+                                }
+                                endAdornment={
+                                  <InputAdornment position="end">
+                                    <IconButton
+                                      aria-label="save edit"
+                                      edge="end"
+                                      onClick={() => {
+                                        handleEdit();
+                                        setEditValue({ name: "", id: null });
+                                      }}
+                                    >
+                                      <ArrowCircleRight sx={{ color: "gray" }} />
+                                    </IconButton>
+                                    <IconButton
+                                      aria-label="save edit"
+                                      edge="end"
+                                      onClick={() => {
+                                        setEditValue({ name: "", id: null });
+                                      }}
+                                    >
+                                      <Cancel sx={{ color: "gray" }} />
+                                    </IconButton>
+                                  </InputAdornment>
+                                }
+                              />
+                            </MDBox>
+                          ) : (
+                            <MDBox
+                              p={2}
+                              lineHeight={0}
+                              display={"flex"}
+                              alignItems={"center"}
+                              justifyContent={"space-between"}
+                            >
+                              <MDTypography variant="h5">{item.name}</MDTypography>
+                              <Box display={"flex"} gap={2}>
+                                <ArrowCircleRight
+                                  sx={{ color: "gray", cursor: "pointer" }}
+                                  fontSize="medium"
+                                  onClick={() =>
+                                    selectedChapter
+                                      ? (() => {})()
+                                      : handleClick(
+                                          selectedClass
+                                            ? selectedSubject
+                                              ? selectedBranch
+                                                ? setSelectedChapter
+                                                : setSelectedBranch
+                                              : setSelectedSubject
+                                            : setSelectedClass,
+                                          item.id
+                                        )
+                                  }
+                                />
+                                <Edit
+                                  sx={{ color: "gray", cursor: "pointer" }}
+                                  fontSize="medium"
+                                  onClick={() => {
+                                    setEditValue({ name: item.name, id: item.id });
+                                    setNewItemName(""); // Clear new item input when editing
+                                  }}
+                                />
+                                <Delete
+                                  sx={{ color: "gray", cursor: "pointer" }}
+                                  fontSize={"medium"}
+                                  onClick={() => handleDelete(item.id)}
+                                />
+                              </Box>
+                            </MDBox>
+                          )}
+                        </Card>
+                      </MDBox>
+                    ))}
                 </div>
               </div>
             </Card>
