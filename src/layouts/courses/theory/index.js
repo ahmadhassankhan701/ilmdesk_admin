@@ -10,11 +10,6 @@ import {
   Button,
   Backdrop,
   Box,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Avatar,
   CircularProgress,
 } from "@mui/material";
@@ -28,7 +23,7 @@ import {
   query,
   getDocs,
   deleteDoc,
-  addDoc,
+  setDoc,
 } from "firebase/firestore";
 
 // Material Dashboard 2 React components
@@ -65,21 +60,13 @@ const VisuallyHiddenInput = styled("input")({
   width: 1,
 });
 const CourseTheory = () => {
-  const { id } = useParams();
+  const { id, courseId } = useParams();
   const navigate = useNavigate();
   const [content, setContent] = useState({ youtubeLinks: [], pdfs: [] });
-  const [details, setDetails] = useState({
-    title: "",
-    subject: "",
-    price: "0",
-    image: "",
-    difficulty: "beginner",
-  });
   const [quizzes, setQuizzes] = useState([]);
   const [theory, setTheory] = useState("");
   const [newYouTube, setNewYouTube] = useState("");
   const [loading, setLoading] = useState(false);
-  const [imageLoading, setImageLoading] = useState(false);
   const loaderImage = "/loader.gif";
 
   const fetchContent = async () => {
@@ -93,20 +80,14 @@ const CourseTheory = () => {
         pdfs: data.pdfs,
       });
       setTheory(data.theory);
-      setDetails({
-        title: data.title,
-        subject: data.subject,
-        price: data.price,
-        image: data.image,
-        difficulty: data.difficulty,
-      });
     }
   };
   const fetchQuizzes = async () => {
     const quizzesRef = collection(db, "CourseQuizzes");
-    const q = query(quizzesRef, where("courseId", "==", id));
+    const q = query(quizzesRef, where("moduleId", "==", id));
     const querySnapshot = await getDocs(q);
-    if (querySnapshot.size == 0) {
+    if (querySnapshot.empty) {
+      setQuizzes([]);
       return;
     }
     let quizzesData = [];
@@ -121,16 +102,16 @@ const CourseTheory = () => {
       const docRef = doc(db, "CourseTheory", id);
       const docSnap = await getDoc(docRef);
       const updatedContent = {
-        ...details,
         theory,
         youtubeLinks: content.youtubeLinks,
         pdfs: content.pdfs,
+        courseId,
       };
       if (docSnap.exists()) {
         await updateDoc(docRef, updatedContent);
       } else {
-        const collecRef = collection(db, "CourseTheory");
-        await addDoc(collecRef, updatedContent);
+        const collecRef = doc(db, "CourseTheory", id);
+        await setDoc(collecRef, updatedContent);
       }
       setLoading(false);
       toast.success("Data Added");
@@ -165,18 +146,13 @@ const CourseTheory = () => {
       const storageRef = ref(storage, path);
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
-      const docRef = doc(db, "CourseTheory", id);
-      const docSnap = await getDoc(docRef);
-      await updateDoc(docRef, {
-        pdfs: [...docSnap.data().pdfs, { name: filename, path, fileUrl: url }],
-      });
       setContent({
         ...content,
         pdfs: [...content.pdfs, { name: filename, path, fileUrl: url }],
       });
       e.target.value = ""; // Reset the input value
       setLoading(false);
-      toast.success("File uploaded");
+      toast.success("File uploaded. Remember to submit the form to save changes.");
     } catch (error) {
       setLoading(false);
       toast.error("Something went wrong");
@@ -222,42 +198,6 @@ const CourseTheory = () => {
   const handleQuizEdit = (quizId) => {
     navigate(`/courses/quiz/${id}/${quizId}`);
   };
-  const handleImageInput = async (e) => {
-    try {
-      setImageLoading(true);
-      const file = e.target.files[0];
-      if (file === undefined || file === null) {
-        return;
-      }
-      const formData = new FormData();
-      formData.append("document", file);
-      const filedata = [...formData];
-      const filename = filedata[0][1].name;
-      const fileExtension = filename.split(".").pop();
-      const fileSize = filedata[0][1].size;
-      if (fileExtension !== "png" && fileExtension !== "jpg" && fileExtension !== "jpeg") {
-        setImageLoading(false);
-        toast.error("File type should be png, jpg or jpeg");
-        return;
-      }
-      if (fileSize > 2000000) {
-        setImageLoading(false);
-        toast.error("File size should not exceed 2MB");
-        return;
-      }
-      const path = `CoursesImages/${randomId()}`;
-      const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      setDetails({ ...details, image: url });
-      setImageLoading(false);
-      toast.success("Image uploaded successfully");
-    } catch (error) {
-      setImageLoading(false);
-      toast.error("Error uploading image");
-      console.log(error);
-    }
-  };
   useEffect(() => {
     fetchContent();
     fetchQuizzes();
@@ -279,135 +219,6 @@ const CourseTheory = () => {
                 </MDTypography>
                 <MDBox py={1} lineHeight={0}>
                   <div className="p-8 max-w-4xl mx-auto">
-                    <Box
-                      display={"flex"}
-                      justifyContent={"center"}
-                      alignItems={"center"}
-                      flexDirection={"column"}
-                    >
-                      <Avatar src={details.image} sx={{ width: 150, height: 150, mx: "auto" }} />
-                      {/* <img src={details.image} alt="course profile" width={200} height={150} /> */}
-                      {imageLoading ? (
-                        <CircularProgress color="primary" />
-                      ) : (
-                        <IconButton
-                          component="label"
-                          role={undefined}
-                          variant="contained"
-                          tabIndex={-1}
-                          onChange={(e) => handleImageInput(e)}
-                        >
-                          <Camera />
-                          <VisuallyHiddenInput
-                            type="file"
-                            accept="image/png, image/gif, image/jpeg"
-                          />
-                        </IconButton>
-                      )}
-                    </Box>
-                    <Box
-                      display={"flex"}
-                      justifyContent={"space-between"}
-                      alignItems={"center"}
-                      gap={1}
-                      mt={2}
-                    >
-                      <TextField
-                        id="outlined-basic"
-                        label="Course Title"
-                        variant="outlined"
-                        fullWidth
-                        InputLabelProps={{ style: { fontSize: 14 } }}
-                        sx={{
-                          ".MuiInputBase-input": { fontSize: "0.9rem" },
-                          mb: 2,
-                        }}
-                        inputProps={{
-                          style: {
-                            height: "20px",
-                          },
-                        }}
-                        value={details.title}
-                        onChange={(e) => setDetails({ ...details, title: e.target.value })}
-                      />
-                      <TextField
-                        id="outlined-basic"
-                        label="Subject"
-                        variant="outlined"
-                        fullWidth
-                        InputLabelProps={{ style: { fontSize: 14 } }}
-                        sx={{
-                          ".MuiInputBase-input": { fontSize: "0.9rem" },
-                          mb: 2,
-                        }}
-                        inputProps={{
-                          style: {
-                            height: "20px",
-                          },
-                        }}
-                        value={details.subject}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const newValue = val.toLowerCase().trim();
-                          setDetails({ ...details, subject: newValue });
-                        }}
-                      />
-                    </Box>
-                    <Box
-                      display={"flex"}
-                      justifyContent={"space-between"}
-                      alignItems={"center"}
-                      gap={1}
-                      mb={2}
-                    >
-                      <FormControl fullWidth>
-                        <InputLabel id="demo-simple-select-label" sx={{ fontSize: 14 }}>
-                          Difficulty
-                        </InputLabel>
-                        <Select
-                          labelId="demo-simple-select-label"
-                          id="demo-simple-select"
-                          label="Difficulty"
-                          sx={{ fontSize: 14, height: 44 }}
-                          inputProps={{
-                            style: {
-                              height: "20px",
-                            },
-                          }}
-                          value={details.difficulty || ""}
-                          onChange={(e) => setDetails({ ...details, difficulty: e.target.value })}
-                        >
-                          <MenuItem value={"beginner"} sx={{ fontSize: 14 }}>
-                            Beginner
-                          </MenuItem>
-                          <MenuItem value={"intermediate"} sx={{ fontSize: 14 }}>
-                            Intermediate
-                          </MenuItem>
-                          <MenuItem value={"expert"} sx={{ fontSize: 14 }}>
-                            Expert
-                          </MenuItem>
-                        </Select>
-                      </FormControl>
-
-                      <TextField
-                        id="outlined-basic"
-                        label="Price (Rs)"
-                        variant="outlined"
-                        fullWidth
-                        InputLabelProps={{ style: { fontSize: 14 } }}
-                        sx={{
-                          ".MuiInputBase-input": { fontSize: "0.9rem" },
-                        }}
-                        inputProps={{
-                          type: "number",
-                          style: {
-                            height: "20px",
-                          },
-                        }}
-                        value={details.price}
-                        onChange={(e) => setDetails({ ...details, price: e.target.value })}
-                      />
-                    </Box>
                     <ReactQuillComp value={theory} setValue={setTheory} />
                     <OutlinedInput
                       id="outlined-youtube-link"

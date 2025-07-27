@@ -40,7 +40,8 @@ const VisuallyHiddenInput = styled("input")({
   width: 1,
 });
 const Quizzes = () => {
-  const { courseId, quizId } = useParams();
+  const { moduleId, quizId } = useParams();
+  const params = useParams();
   const navigate = useNavigate();
   const [details, setDetails] = useState({
     mode: "online",
@@ -112,7 +113,7 @@ const Quizzes = () => {
       const updatedContent = {
         ...details,
         questions,
-        courseId,
+        moduleId,
       };
       if (docSnap.exists()) {
         await updateDoc(docRef, updatedContent);
@@ -194,7 +195,7 @@ const Quizzes = () => {
   };
   useEffect(() => {
     fetchQuiz();
-  }, [courseId && quizId]);
+  }, [moduleId && quizId]);
   return (
     <DashboardLayout>
       <Backdrop open={loading} style={{ zIndex: 9999 }}>

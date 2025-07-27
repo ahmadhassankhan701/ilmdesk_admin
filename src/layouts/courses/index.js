@@ -23,7 +23,7 @@ const Courses = () => {
   const loaderImage = "/loader.gif";
 
   const fetchData = async () => {
-    const ref = collection(db, "CourseTheory");
+    const ref = collection(db, "courses");
     const snapshot = await getDocs(ref);
     let allCourses = [];
     if (snapshot.size > 0)
@@ -32,7 +32,7 @@ const Courses = () => {
   };
 
   const handleEdit = (id) => {
-    navigate(`/courses/theory/${id}`);
+    navigate(`/courses/modules/${id}`);
   };
   const handleDelete = async (courseId) => {
     try {
@@ -42,8 +42,16 @@ const Courses = () => {
       if (!confirm) return;
 
       setLoading(true);
-      const docRef = doc(db, "CourseTheory", courseId);
+      const docRef = doc(db, "courses", courseId);
       await deleteDoc(docRef);
+      const qc = query(collection(db, "CourseTheory"), where("courseId", "==", courseId));
+      const querySnapshots = await getDocs(qc);
+
+      const deletePromise = querySnapshots.docs.map((docSnap) => {
+        return deleteDoc(doc(db, "CourseTheory", docSnap.id));
+      });
+
+      await Promise.all(deletePromise);
       const q = query(collection(db, "CourseQuizzes"), where("courseId", "==", courseId));
       const querySnapshot = await getDocs(q);
 
@@ -93,7 +101,7 @@ const Courses = () => {
                   color={"secondary"}
                   variant={"contained"}
                   size={"small"}
-                  onClick={() => navigate("/courses/theory/123")}
+                  onClick={() => navigate(`/courses/modules/123`)}
                 >
                   Add New
                 </MDButton>

@@ -17,6 +17,7 @@ import SignUp from "layouts/authentication/sign-up";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
+import CourseModules from "layouts/courses/modules";
 
 const routes = [
   {
@@ -59,7 +60,7 @@ const routes = [
   },
   {
     key: "course_quiz",
-    route: "/courses/quiz/:courseId/:quizId",
+    route: "/courses/quiz/:moduleId/:quizId",
     component: <CourseQuiz />,
     hidden: true, // This will hide it from the sidebar
   },
@@ -73,8 +74,15 @@ const routes = [
   {
     name: "Course Theory",
     key: "course_theory",
-    route: "/courses/theory/:id",
+    route: "/courses/theory/:id/:courseId",
     component: <CourseTheory />,
+    hidden: true, // This will hide it from the sidebar
+  },
+  {
+    name: "Course Modules",
+    key: "course_modules",
+    route: "/courses/modules/:id",
+    component: <CourseModules />,
     hidden: true, // This will hide it from the sidebar
   },
   {
