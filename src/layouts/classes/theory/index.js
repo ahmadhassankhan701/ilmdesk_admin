@@ -138,18 +138,13 @@ const EditClassesContent = () => {
       const storageRef = ref(storage, path);
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
-      const docRef = doc(db, "ClassesTheory", id);
-      const docSnap = await getDoc(docRef);
-      await updateDoc(docRef, {
-        pdfs: [...docSnap.data().pdfs, { name: filename, path, fileUrl: url }],
-      });
       setContent({
         ...content,
         pdfs: [...content.pdfs, { name: filename, path, fileUrl: url }],
       });
       e.target.value = ""; // Reset the input field
       setLoading(false);
-      toast.success("File uploaded");
+      toast.success("File uploaded. Remember to save the content.");
     } catch (error) {
       setLoading(false);
       toast.error("Something went wrong");
