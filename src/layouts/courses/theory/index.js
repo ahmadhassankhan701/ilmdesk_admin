@@ -165,11 +165,16 @@ const CourseTheory = () => {
       const storageRef = ref(storage, path);
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
-      content.pdfs.push({
-        name: filename,
-        path,
-        fileUrl: url,
+      const docRef = doc(db, "CourseTheory", id);
+      const docSnap = await getDoc(docRef);
+      await updateDoc(docRef, {
+        pdfs: [...docSnap.data().pdfs, { name: filename, path, fileUrl: url }],
       });
+      setContent({
+        ...content,
+        pdfs: [...content.pdfs, { name: filename, path, fileUrl: url }],
+      });
+      e.target.value = ""; // Reset the input value
       setLoading(false);
       toast.success("File uploaded");
     } catch (error) {
@@ -184,9 +189,14 @@ const CourseTheory = () => {
       const fileRef = ref(storage, path);
       // Delete the file
       await deleteObject(fileRef);
-      let tempArr = content.pdfs;
-      tempArr.splice(index, 1);
-      setContent({ ...content, pdfs: [...tempArr] });
+      const docRef = doc(db, "CourseTheory", id);
+      const docSnap = await getDoc(docRef);
+      const updatedPdfs = docSnap.data().pdfs.filter((_, i) => i !== index);
+      await updateDoc(docRef, { pdfs: updatedPdfs });
+      setContent({
+        ...content,
+        pdfs: updatedPdfs,
+      });
       setLoading(false);
       toast.error("File deleted");
     } catch (error) {
