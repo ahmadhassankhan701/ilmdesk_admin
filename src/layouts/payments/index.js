@@ -99,7 +99,7 @@ function Tables() {
     try {
       setLoading(true);
       const docRef = doc(db, `Payments/${payId}`);
-      const courseRef = doc(db, `CourseTheory/${courseId}`);
+      const courseRef = doc(db, `courses/${courseId}`);
       await updateDoc(docRef, { status: "approved", confirmedAt: new Date() });
       await updateDoc(courseRef, {
         students: arrayUnion(userId),
