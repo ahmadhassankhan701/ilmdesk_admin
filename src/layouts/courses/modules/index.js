@@ -48,6 +48,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import styled from "@emotion/styled";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import ReactQuillComp from "components/ReactQuillComp";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -77,6 +78,7 @@ const CourseModules = () => {
     price: "0",
     image: "",
     difficulty: "beginner",
+    desc: "",
   });
   const fetchHierarchy = async () => {
     const ref = doc(db, "courses", id);
@@ -85,14 +87,18 @@ const CourseModules = () => {
       return;
     }
     const courseData = snapshot.data();
-    setDetails({
-      title: courseData.title || "",
-      subject: courseData.subject || "",
-      price: courseData.price || "0",
-      image: courseData.image || "",
-      difficulty: courseData.difficulty || "beginner",
-    });
-    setModules(courseData.modules || []);
+    console.log(courseData);
+    if (courseData) {
+      setDetails({
+        title: courseData.title,
+        subject: courseData.subject,
+        price: courseData.price,
+        image: courseData.image,
+        difficulty: courseData.difficulty,
+        desc: courseData.desc || "",
+      });
+      setModules(courseData.modules || []);
+    }
   };
   const handleAdd = async () => {
     const ref = doc(db, "courses", id);
@@ -174,7 +180,7 @@ const CourseModules = () => {
   };
   useEffect(() => {
     fetchHierarchy();
-  }, [id]);
+  }, []);
 
   const handleDelete = async (moduleId) => {
     const confirm = window.confirm(
@@ -229,6 +235,14 @@ const CourseModules = () => {
       toast.error("Please upload a course image");
       return;
     }
+    if (isNaN(details.price) || details.price < 0) {
+      toast.error("Price must be a valid number greater than or equal to 0");
+      return;
+    }
+    if (!details.desc || details.desc.trim() === "") {
+      toast.error("Course description cannot be empty");
+      return;
+    }
     const courseRef = doc(db, "courses", id);
     try {
       // Check if the course already exists
@@ -240,6 +254,7 @@ const CourseModules = () => {
           price: details.price,
           image: details.image,
           difficulty: details.difficulty,
+          desc: details.desc,
           modules: [],
         });
       } else {
@@ -249,6 +264,7 @@ const CourseModules = () => {
           price: details.price,
           image: details.image,
           difficulty: details.difficulty,
+          desc: details.desc,
         });
       }
       toast.success("Course details updated successfully");
@@ -397,6 +413,19 @@ const CourseModules = () => {
                     }}
                     value={details.price}
                     onChange={(e) => setDetails({ ...details, price: e.target.value })}
+                  />
+                </Box>
+                <Box
+                  display={"flex"}
+                  justifyContent={"space-between"}
+                  alignItems={"center"}
+                  gap={1}
+                  m={2}
+                >
+                  <ReactQuillComp
+                    value={details.desc || ""}
+                    setValue={(value) => setDetails((prev) => ({ ...prev, desc: value }))}
+                    placeholder="Write course description here..."
                   />
                 </Box>
                 <Button
