@@ -41,7 +41,6 @@ const VisuallyHiddenInput = styled("input")({
 });
 const Quizzes = () => {
   const { moduleId, quizId } = useParams();
-  const params = useParams();
   const navigate = useNavigate();
   const [details, setDetails] = useState({
     mode: "online",
@@ -49,6 +48,7 @@ const Quizzes = () => {
     quizNumber: "",
     duration: "",
     difficulty: "beginner",
+    locked: 1,
   });
   const [questions, setQuestions] = useState([
     { question: "", explanation: "", options: ["", "", "", ""], correctOption: 0 },
@@ -100,6 +100,7 @@ const Quizzes = () => {
         quizTitle: data.quizTitle,
         quizNumber: data.quizNumber,
         duration: data.duration,
+        locked: data.locked || 0,
       });
       setQuestions(data.questions || []);
     }
@@ -289,6 +290,31 @@ const Quizzes = () => {
                           </MenuItem>
                           <MenuItem value={"expert"} sx={{ fontSize: 14 }}>
                             Expert
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
+                      <FormControl fullWidth>
+                        <InputLabel id="demo-simple-select-label" sx={{ fontSize: 14 }}>
+                          Locked
+                        </InputLabel>
+                        <Select
+                          labelId="demo-simple-select-label"
+                          id="demo-simple-select"
+                          label="Locked"
+                          sx={{ fontSize: 14, height: 44 }}
+                          inputProps={{
+                            style: {
+                              height: "20px",
+                            },
+                          }}
+                          value={details.locked}
+                          onChange={(e) => setDetails({ ...details, locked: e.target.value })}
+                        >
+                          <MenuItem value={1} sx={{ fontSize: 14 }}>
+                            True
+                          </MenuItem>
+                          <MenuItem value={0} sx={{ fontSize: 14 }}>
+                            False
                           </MenuItem>
                         </Select>
                       </FormControl>

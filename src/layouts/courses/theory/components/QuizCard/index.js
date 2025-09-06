@@ -23,11 +23,23 @@ import Icon from "@mui/material/Icon";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
-
+import PDFQuizResult from "components/Modals/PDFQuizResult";
 // Material Dashboard 2 React context
 import { useMaterialUIController } from "context";
 
-function QuizCard({ title, mode, duration, difficulty, noGutter, handleDelete, handleEdit }) {
+function QuizCard({
+  title,
+  mode,
+  duration,
+  difficulty,
+  noGutter,
+  handleDelete,
+  handleEdit,
+  handleViewResults,
+  result,
+  open,
+  setOpen,
+}) {
   const [controller] = useMaterialUIController();
   const { darkMode } = controller;
 
@@ -64,6 +76,14 @@ function QuizCard({ title, mode, duration, difficulty, noGutter, handleDelete, h
             <MDButton variant="text" color={darkMode ? "white" : "dark"} onClick={handleEdit}>
               <Icon>edit</Icon>&nbsp;edit
             </MDButton>
+            <MDButton
+              variant="text"
+              color={darkMode ? "white" : "dark"}
+              onClick={handleViewResults}
+            >
+              <Icon>visibility</Icon>&nbsp;results
+            </MDButton>
+            {open && result && <PDFQuizResult result={result} open={open} setOpen={setOpen} />}
           </MDBox>
         </MDBox>
         <MDBox mb={1} lineHeight={0}>
@@ -107,6 +127,10 @@ QuizCard.propTypes = {
   handleDelete: PropTypes.func.isRequired,
   handleEdit: PropTypes.func.isRequired,
   noGutter: PropTypes.bool,
+  handleViewResults: PropTypes.func.isRequired,
+  result: PropTypes.arrayOf(PropTypes.object).isRequired,
+  open: PropTypes.bool.isRequired,
+  setOpen: PropTypes.func.isRequired,
 };
 
 export default QuizCard;

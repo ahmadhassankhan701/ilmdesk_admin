@@ -64,9 +64,11 @@ const CourseTheory = () => {
   const navigate = useNavigate();
   const [content, setContent] = useState({ youtubeLinks: [], pdfs: [] });
   const [quizzes, setQuizzes] = useState([]);
+  const [quizResult, setQuizResult] = useState([]);
   const [theory, setTheory] = useState("");
   const [newYouTube, setNewYouTube] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pdfmodalopen, setPdfmodalopen] = useState(false);
   const loaderImage = "/loader.gif";
 
   const fetchContent = async () => {
@@ -178,6 +180,30 @@ const CourseTheory = () => {
     } catch (error) {
       setLoading(false);
       toast.error("File not deleted");
+      console.log(error);
+    }
+  };
+  const handleViewResults = async (quizId) => {
+    try {
+      setLoading(true);
+      const docRef = collection(db, "CourseQuizAttempts");
+      const q = query(docRef, where("quizId", "==", quizId));
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) {
+        setLoading(false);
+        toast.error("No attempts found for this quiz");
+        return;
+      }
+      let attemptsData = [];
+      querySnapshot.forEach((doc) => {
+        attemptsData.push({ key: doc.id, ...doc.data() });
+      });
+      setQuizResult(attemptsData);
+      setLoading(false);
+      setPdfmodalopen(true);
+    } catch (error) {
+      setLoading(false);
+      toast.error("Something went wrong");
       console.log(error);
     }
   };
@@ -374,6 +400,10 @@ const CourseTheory = () => {
                             difficulty={item.difficulty}
                             handleDelete={() => handleQuizDelete(item.key)}
                             handleEdit={() => handleQuizEdit(item.key)}
+                            handleViewResults={() => handleViewResults(item.key)}
+                            open={pdfmodalopen}
+                            setOpen={setPdfmodalopen}
+                            result={quizResult}
                           />
                         </MDBox>
                       ))}
