@@ -198,6 +198,8 @@ const CourseTheory = () => {
       querySnapshot.forEach((doc) => {
         attemptsData.push({ key: doc.id, ...doc.data() });
       });
+      // Sort descending by 'correct'
+      attemptsData.sort((a, b) => (b.correct || 0) - (a.correct || 0));
       setQuizResult(attemptsData);
       setLoading(false);
       setPdfmodalopen(true);
